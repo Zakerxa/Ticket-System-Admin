@@ -1,7 +1,7 @@
 <template>
 <div class="container-fluid">
     <div class="row">
-        <h3 class="p-3 pl-0">Dashboard - {{authUser.role.name}}</h3>
+        <h3 v-if="authUser" class="p-3 pl-0">Dashboard - {{authUser.role.name}}</h3>
     </div>
     <div class="row pb-3" v-show="checkIds.length">
         <div class="col">
@@ -11,8 +11,8 @@
             <button class="btn btn-sm btn-outline-primary ml-1">{{checkIds.length ? 'Selected ' + checkIds.length : ''}}</button>
         </div>
         <div class="col text-end">
-            <button v-if="(authUser.role_id == 2)" class="btn btn-sm btn-outline-success" @click="checkTickets">{{checkIds.length >= 2 ? 'Checked All' : 'Checked'}}</button>
-            <button v-if="(authUser.role_id == 3)" class="btn btn-sm btn-outline-success" @click="approveTickets">{{checkIds.length >= 2 ? 'Approved All' : 'Approved'}}</button>
+            <button v-if="(authUser && authUser.role_id == 2)" class="btn btn-sm btn-outline-success" @click="checkTickets">{{checkIds.length >= 2 ? 'Checked All' : 'Checked'}}</button>
+            <button v-if="(authUser && authUser.role_id == 3)" class="btn btn-sm btn-outline-success" @click="approveTickets">{{checkIds.length >= 2 ? 'Approved All' : 'Approved'}}</button>
         </div>
     </div>
 
@@ -68,11 +68,10 @@
             <p @click="review=false;vuePaginate(current??null)" class="btn btn-sm btn-outline-dark">Go Back</p>
         </div>
         <div class="col text-center pt-4">
-            <p v-if="(authUser.role_id == 3)" @click="reviewTicket(reader,0);review=false;vuePaginate(current??null)" class="btn btn-sm btn-outline-danger">Reject</p>
-            <p v-else @click="reviewTicket(reader,1);review=false;vuePaginate(current??null)" class="btn btn-sm btn-outline-danger">Reject</p>
+            <p @click="reviewTicket(reader,1);review=false;vuePaginate(current??null)" class="btn btn-sm btn-outline-danger">Reject</p>
         </div>
         <div class="col text-center pt-4">
-            <p v-if="(authUser.role_id == 3)" @click="reviewTicket(reader,3);review=false;vuePaginate(current??null)" class="btn btn-sm btn-outline-success">Approved</p>
+            <p v-if="(authUser && authUser.role_id == 3)" @click="reviewTicket(reader,3);review=false;vuePaginate(current??null)" class="btn btn-sm btn-outline-success">Approved</p>
             <p v-else @click="reviewTicket(reader,2);review=false;vuePaginate(current??null)" class="btn btn-sm btn-outline-primary">Check</p>
         </div>
     </div>
@@ -214,7 +213,7 @@ export default {
             this.checkBoxDef();
             // When you delete all checkbox last pagination that will refetch data back
             if ((!this.vsearch) && (!res.data.length)) {
-                console.log("No search & Data");
+                // console.log("No search & Data");
                 this.readyFormLoading = false;
                 if (!this.current) {
                     this.vsearch = '';
@@ -225,7 +224,6 @@ export default {
             }
 
             //   this.vsearch = '';
-            console.log(res.data,"inserting Data");
             this.forms = res.data;
             this.paginations = {
                 current_page: res.current_page,
@@ -317,9 +315,9 @@ export default {
             this.$store.dispatch('editTicket', {id:ticket.id,code:code}).then(() => {
                 this.$emit('review');
                 this.review = false;
-                $('#modalSuccessForm').modal('hide');
+                this.vuePaginate(this.current ?? null);
             })
-            .catch(() => $('#modalSuccessForm').modal('hide'));
+            .catch(() => console.log('Error'));
         }
     },
     watch: {
@@ -333,6 +331,7 @@ export default {
     mounted() {
         this.$store.dispatch('gettingAuthUser').then(() => {
             if (this.authUser) this.$store.dispatch('getMyTicket');
+            else this.$store.commit('removeAuthorize');
         }).catch(() => {
             if (this.authUser) this.$store.dispatch('getMyTicket');
         })

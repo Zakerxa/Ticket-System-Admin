@@ -62,6 +62,7 @@ export default {
         this.$nextTick(()=>  setTimeout(() => this.adminLoading = false, 300));
         this.$store.dispatch('gettingAuthUser').then(() => {
             if (this.authUser) this.$http('/api/user/tickets').then( (response) => this.noti = response.data.noti);
+            else this.$store.commit('removeAuthorize');
         }).catch(() => {
             if (!this.authUser) this.$store.commit('removeAuthorize');
         })
