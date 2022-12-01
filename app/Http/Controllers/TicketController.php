@@ -24,6 +24,44 @@ class TicketController extends Controller
         return response()->json(['data'=>$form,'noti'=>$noti]);
     }
 
+    public function checked($id){
+        try {
+           $ids = explode(",", $id);
+           $tickets = Ticket::whereIn('id', $ids)->where('status',0)->get();
+           foreach ($tickets as $value) {
+             $value->status = 2;
+             $value->save();
+             $logCreate = Log::create(['title' => 'checked','user_id'=>request()->user()->id,'token' => $value['ticket']]);
+           }
+
+           if ($logCreate) return response()->json(['response' => 'success']);
+           else return response()->json(['response' => 'error']);
+
+           return response()->json(['response'=>'success',$tickets]);
+        }catch (\Throwable $th) {
+           return response()->json($th);
+        }
+     }
+
+     public function approved($id){
+        try {
+           $ids = explode(",", $id);
+           $tickets = Ticket::whereIn('id', $ids)->where('status',2)->get();
+           foreach ($tickets as $value) {
+             $value->status = 3;
+             $value->save();
+             $logCreate = Log::create(['title' => 'approved','user_id'=>request()->user()->id,'token' => $value['ticket']]);
+           }
+
+           if ($logCreate) return response()->json(['response' => 'success']);
+           else return response()->json(['response' => 'error']);
+
+           return response()->json(['response'=>'success',$tickets]);
+        }catch (\Throwable $th) {
+           return response()->json($th);
+        }
+     }
+
 
     public function edit(Request $request){
 
@@ -41,7 +79,6 @@ class TicketController extends Controller
             if ($logCreate) return response()->json(['response' => 'success']);
             else return response()->json(['response' => 'error']);
 
-            return response()->json(['response' => 'success']);
         }else return response()->json(['response' => 'error']);
     }
 

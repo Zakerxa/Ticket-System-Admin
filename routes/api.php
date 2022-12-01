@@ -24,9 +24,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Ticket Path
     Route::get('user/tickets',[TicketController::class,'index']);
     Route::post('user/ticket/{id}',[TicketController::class,'show']);
-    Route::post('user/create/ticket',[TicketController::class,'store']);
     Route::post('user/edit/ticket/{id}',[TicketController::class,'edit']);
-    Route::post('user/delete/ticket/{id}',[TicketController::class,'destory']);
+    Route::post('user/tickets/checked/{id}',[TicketController::class,'checked']);
+    Route::post('user/tickets/approved/{id}',[TicketController::class,'approved']);
 
     // LogOut
     Route::get('/logout', [AdminController::class, 'logout']);

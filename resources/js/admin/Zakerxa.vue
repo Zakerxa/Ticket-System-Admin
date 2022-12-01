@@ -51,20 +51,20 @@ export default {
           this.search = e
         },
         searchOver(){
-          // Refresh the search key
           this.search = '';
         },
         review(){
-            // Accepting reading cause of noti change
             this.$http.get('/api/user/tickets').then( (response) => this.noti = response.data.noti);
         }
     },
     computed: { ...mapGetters(['auth', 'authUser'])},
-    created () {
-        this.$http('/api/user/tickets').then( (response) => this.noti = response.data.noti);
-    },
     mounted () {
         this.$nextTick(()=>  setTimeout(() => this.adminLoading = false, 300));
+        this.$store.dispatch('gettingAuthUser').then(() => {
+            if (this.authUser) this.$http('/api/user/tickets').then( (response) => this.noti = response.data.noti);
+        }).catch(() => {
+            if (!this.authUser) this.$store.commit('removeAuthorize');
+        })
     }
 }
 </script>

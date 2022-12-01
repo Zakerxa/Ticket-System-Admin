@@ -3,15 +3,16 @@
     <div class="row">
         <h3 class="p-3 pl-0">Dashboard - {{authUser.role.name}}</h3>
     </div>
-    <div class="row pb-3" v-show="removeIds.length">
+    <div class="row pb-3" v-show="checkIds.length">
         <div class="col">
             <button class="btn btn-sm btn-outline-dark" @click="selectAllForms()">{{selectAll ? 'Deselect' : 'Select'}} All</button>
         </div>
         <div class="col">
-            <button class="btn btn-sm btn-outline-primary ml-1">{{removeIds.length ? 'Selected ' + removeIds.length : ''}}</button>
+            <button class="btn btn-sm btn-outline-primary ml-1">{{checkIds.length ? 'Selected ' + checkIds.length : ''}}</button>
         </div>
         <div class="col text-end">
-            <button class="btn btn-sm btn-outline-danger" @click="delForms">{{removeIds.length >= 2 ? 'Delete All' : 'Delete'}}</button>
+            <button v-if="(authUser.role_id == 2)" class="btn btn-sm btn-outline-success" @click="checkTickets">{{checkIds.length >= 2 ? 'Checked All' : 'Checked'}}</button>
+            <button v-if="(authUser.role_id == 3)" class="btn btn-sm btn-outline-success" @click="approveTickets">{{checkIds.length >= 2 ? 'Approved All' : 'Approved'}}</button>
         </div>
     </div>
 
@@ -54,6 +55,9 @@
                     <tr>
                         <th scope="row">Status</th>
                         <td v-if="(reader.status == 0)">: Waiting</td>
+                        <td v-if="(reader.status == 1)">: Reject</td>
+                        <td v-if="(reader.status == 2)">: Checked</td>
+                        <td v-if="(reader.status == 3)">: Approved</td>
                     </tr>
 
                 </tbody>
@@ -127,7 +131,7 @@
         <!-- No Data Found -->
         <div v-else-if="forms.length == 0" class="col-12 text-center p-3">
             <h3 class="pt-5">No Ticket Here {{search}}</h3>
-            <button v-show="removeIds.length" @click="searchOver" class="btn btn-sm btn-outline-dark mt-5">Go Back</button>
+            <button v-show="checkIds.length" @click="searchOver" class="btn btn-sm btn-outline-dark mt-5">Go Back</button>
         </div>
 
         <!-- Loading -->
@@ -184,7 +188,7 @@ export default {
             readyFormLoading: false,
 
             selectAll: false,
-            removeIds: [],
+            checkIds: [],
             delIcon: [],
             // Mailing System
         }
@@ -205,7 +209,7 @@ export default {
         },
         insertData(res) {
             //  If something is change Reselect All check
-            if (this.removeIds.length >= 1 && this.selectAll) this.selectAllForms();
+            if (this.checkIds.length >= 1 && this.selectAll) this.selectAllForms();
             // If something is change refresh checkbox
             this.checkBoxDef();
             // When you delete all checkbox last pagination that will refetch data back
@@ -240,13 +244,13 @@ export default {
             this.$nextTick(() => {
                 let id = e.target.value;
                 console.log(id);
-                if (e.target.checked) this.removeIds.push(parseInt(id));
-                else this.removeIds.remove(parseInt(id));
-                this.delIcon = this.removeIds;
+                if (e.target.checked) this.checkIds.push(parseInt(id));
+                else this.checkIds.remove(parseInt(id));
+                this.delIcon = this.checkIds;
             });
         },
         checkBoxDef(e, ctn) {
-            this.removeIds = [];
+            this.checkIds = [];
             if (this.forms.length >= 1) {
                 this.forms.map(res => {
                     document.getElementById(res.id).checked = e ?? false;
@@ -259,21 +263,31 @@ export default {
             if (this.selectAll) {
                 let ctn = [];
                 this.checkBoxDef(true, ctn)
-                const sameId = this.removeIds.filter(e => {
+                const sameId = this.checkIds.filter(e => {
                     for (var i = 0; i < ctn.length; i++)
                         if (e.id == ctn[i].id) return true;
                     return null;
                 });
                 if (sameId.length > 0)
-                    for (let i = 0; i < sameId.length; i++) this.removeIds.remove(sameId[i]);
-                this.removeIds = ctn;
+                    for (let i = 0; i < sameId.length; i++) this.checkIds.remove(sameId[i]);
+                this.checkIds = ctn;
             } else this.checkBoxDef();
-            this.delIcon = this.removeIds;
+            this.delIcon = this.checkIds;
         },
-        delForms() {
-            if (this.removeIds.length >= 1 && confirm('Are you sure to delete?')) {
+        checkTickets() {
+            if (this.checkIds.length >= 1 && confirm('Are you sure to check them all?')) {
                 this.readyFormLoading = true;
-                this.$http.post('api/delete/' + this.removeIds)
+                this.$http.post('api/user/tickets/checked/' + this.checkIds)
+                    .then(res => {
+                        if (res.data.response == 'success') this.vuePaginate(this.current ?? null);
+                    })
+                    .catch(err => console.log("Error", err));
+            } else alert('Reselect form again.');
+        },
+        approveTickets(){
+            if (this.checkIds.length >= 1 && confirm('Are you sure to approve them all?')) {
+                this.readyFormLoading = true;
+                this.$http.post('api/user/tickets/approved/' + this.checkIds)
                     .then(res => {
                         if (res.data.response == 'success') this.vuePaginate(this.current ?? null);
                     })
@@ -288,7 +302,7 @@ export default {
         },
         reviewTk(e) {
             //  If something is change Reselect All check
-            if (this.removeIds.length >= 1 && this.selectAll) this.selectAllForms();
+            if (this.checkIds.length >= 1 && this.selectAll) this.selectAllForms();
             // If something is change refresh checkbox
             this.checkBoxDef();
             // review Forms
